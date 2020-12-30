@@ -24,7 +24,7 @@ $ pip install requirements.txt
 
 
 Usage : In same directory as code with virtual environment activated
-$python3 bittorrent_client.py <filename.torrent> <download location> <max number_of_peers (default = 50)>
+$python3 Bittorrent.py <filename.torrent> <download location> <max number_of_peers (default = 50)>
 
 
 Program will stop running once the download is complete unless some fatal error is encountered.
