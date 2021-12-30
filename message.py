@@ -46,11 +46,8 @@ class Message() :
 
     def handleBitfield(self) :
         piece_list = []
-        # print("Dealing with bitfield.")
         for index in self.payload :
             bstr = f'{index:0>8b}'
-            #print(bstr)
             for i in bstr :
-                #print(i)
                 piece_list.append(i)
         return piece_list

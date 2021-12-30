@@ -12,5 +12,4 @@ class Peer() :
         self.peer_id = peer_id
         self.peer_ip = peer_ip
         self.peer_portno = peer_portno
-        #initialize karava lagnare.
         self.piece_list = []

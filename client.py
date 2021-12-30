@@ -83,10 +83,7 @@ class Client() :
                     self.tracker_url_list.append([])
                     self.tracker_url_list[0].append(metainfo['announce'])
 
-                #self.tracker_url_list = []
-                #print(self.tracker_url_list)
                 self.info = metainfo['info']
-                # print(self.info)
                 self.info_hash = hashlib.sha1(bencode.encode(self.info)).digest()
                 self.piece_length = self.info['piece length']
                 if 'files' in self.info :
@@ -94,15 +91,10 @@ class Client() :
                     self.length = self.getMultifileLength()
                 else :
                     self.isMultifile = False
-                    #self.length = 9216
                     self.length = self.info['length']
                 self.num_of_pieces = self.length // self.piece_length + 1
                 self.last_piece_len = self.length % self.piece_length
                 self.pieces = self.info['pieces']
-                # print(self.length)
-                # print(self.piece_length)
-                # print(self.num_of_pieces)
-                # print(self.last_piece_len)
                 for k in range(self.num_of_pieces) :
                     self.have_pieces.append('0')
 
@@ -363,29 +355,12 @@ class Client() :
                             bstr = f'{byte:0>8b}'
                             for bit in bstr :
                                 bitwise_payload.append(bit)
-                        #self.num_of_pieces = self.get_num_of_pieces()
 
                         #initialize have_pieces list
-                        #for k in range(self.num_of_pieces) :
-                        #    self.have_pieces.append('0')
-                        # print(self.num_of_pieces)
                         spares = (first_msg.len - 1) * 8 - self.num_of_pieces
-                        # print(spares)
-
-                        # if spares < 0 and '1' in bitwise_payload[-spares : ] :
-                        #     #spare bits set.
-                        #     # print("in if")
-                        #     print(peer_tag, "Error in received bitfield, dropping peer")
-                        #     outboundSocket.close()
-                        #     return
-                        #else :
-                        # print("in else")
-                        #print(self.num_of_pieces)
                         this_peer.piece_list = bitwise_payload[: self.num_of_pieces]
                         #m = len(this_peer.piece_list)
                         self.global_piece_list[this_peer] = this_peer.piece_list
-                        #print("m is %d",m)
-                        # this_peer.piece_list = first_msg.handleBitfield()
                     elif first_msg.type == "have" :
                         piece_index = first_msg.handleHave()
                         this_peer.piece_list[piece_index] = '1'
@@ -398,7 +373,6 @@ class Client() :
             print(peer_tag, f"-----{e}-----\n")
 
     def getPieces(self, peer_list, sock_list, p1) :
-        # print(f"index is {p1.index}")
         for this_peer in peer_list :
             outboundSocket = sock_list[this_peer]
             peer_tag = this_peer.peer_ip + " : " + str(this_peer.peer_portno) + " ---"
@@ -409,33 +383,21 @@ class Client() :
                 m = len(this_peer.piece_list)
                 while True :
                     if this_peer.state_info['am_interested'] and not this_peer.state_info['peer_choking'] :
-                            #for j in range(m) :
-                                #if j == 4 :
-                                #    print("in j")
-                                #    piece_length = self.last_piece_len
-                                #if j > 1 :
-                                #    break
-
-                                #print("-1")
                         print("in if")
                         j = p1.index
                         if self.have_pieces[j] == '1' :
-                            #print(f"skipped piece {j}")
                             return
 
-                        #print(0)
 
                         if this_peer.piece_list[j] == '0' :
                             print(peer_tag, f"I do not have piece {j}")
                             continue
 
-                        #print(1)
 
                         r = bytes()
                         #outboundSocket.settimeout(10)
                         n = piece_length // block_length
                         if j == m - 1 :
-                            #print("New j is %d", j)
                             piece_length = self.last_piece_len
                             if piece_length % block_length != 0 :
                                 n = piece_length // block_length + 1
@@ -447,11 +409,8 @@ class Client() :
                             block_index = i
                             piece_index = j
                             block_offset = int(block_index * block_length)
-                            #if j == (len(this_peer.piece_list) - 1) and i == (piece_length // block_length - 1) :
                             if i == (n - 1)  :
                                 block_length = piece_length - block_offset
-                                #print("length of lastest block is %d", block_length)
-                            #print((piece_index, block_index, block_offset, block_length))
                             if this_peer.state_info['peer_choking'] == 0 :
                                 outboundSocket.send(struct.pack(">IBIII",payload_length, message_id, piece_index, block_offset, block_length))
                             else :
@@ -460,28 +419,22 @@ class Client() :
                             sleep(2)
                             #receive upto id of unknown messages.
                             recv_buffer = outboundSocket.recv(5)
-                            #print("recv buf len : %d", len(recv_buffer))
                             some_msg = Message()
 
-                            #print(2)
 
                             prefix = recv_buffer[:4]
 
-                            #print(3)
 
                             print(prefix)
                             if len(prefix) >= 4 :
                                 some_msg.findLength(prefix)
                             else :
-                                #print("prefix ille")
                                 break
                             if some_msg.len == 0 :
                                 some_msg.id = b''
                             else :
-                                #print("in else")
                                 some_msg.id = recv_buffer[4]
 
-                            #print(4)
 
                             some_msg.identify()
                             if some_msg.type == "null":
@@ -510,8 +463,6 @@ class Client() :
                                 outboundSocket.recv(12)
                                 if this_peer.state_info['interested'] and not this_peer.state_info['am_choking'] :
                                     #THIS IS SUPPOSED TO HAPPEN ON THE INBOUND SOCKET
-                                    # some_msg.payload = outboundSocket.recv(8)
-                                    # some_msg.handleRequest()
                                     pass
                                 else :
                                     #ignore
@@ -530,12 +481,9 @@ class Client() :
                             elif some_msg.type == "piece" :
                                 #receiving blocks
                                 x = outboundSocket.recv(8 + block_length)
-                                #print(len(x))
                                 if len(x) == 0 :
-                                    # print("len 0")
                                     break
                                 begin = struct.unpack(">I", x[4:8])[0]
-                                # print(begin)
                                 if begin == block_offset :
                                     print(peer_tag, f"Received block offset {block_offset}")
                                     r += x[8:]
@@ -549,12 +497,6 @@ class Client() :
                             i += 1
                         l1 = self._splitPieces()
 
-                        #print(5)
-
-                        #p1 = Piece(l1[j][0] , j, piece_length, bytes())
-
-                        #print(6)
-
                         if p1.matchHash(r) :
                             print(peer_tag, f"Downloaded piece {j}")
                             p1.data = r
@@ -563,14 +505,8 @@ class Client() :
                             if j == (m - 1) :
                                 if self.isMultifile :
                                     self.writeMultifile()
-                            #print(7)
-
-
-                            # print(self.have_pieces)
-
-                            #print(8)
                         else :
-                            print(peer_tag, "Meh PONGAAAA")
+                            print(peer_tag, "Error while matching Hash Value")
                     #IF THIS PEER HAS A PIECE I DON'T HAVE PLUS RAREST FIRST
                     if this_peer.state_info['am_interested'] == 0 :
                         #send interested

@@ -28,14 +28,10 @@ def scrape_udp(tracker, info_hash, my_peer_id, info, num_peers, my_port, total_l
         udp_sck.settimeout(5)
         ur = tracker[6:]
         urp = ur.split(":")
-        #print(urp)
         port = urp[-1].split("/")
-        #port = urp[-1]
-        #print(port)
         print("to send : ", (urp[0], int(port[0])))
         udp_sck.sendto(msg, (urp[0], int(port[0])))
         reply, addr = udp_sck.recvfrom(1024)
-        #print(reply, addr)
         trans_id = reply[4:8]
         conn_id = reply[8:16]
         ##checks for action
@@ -60,11 +56,8 @@ def scrape_udp(tracker, info_hash, my_peer_id, info, num_peers, my_port, total_l
             msg = conn_id + action + trans_id + info_hash + peer_id + d + l + u + event + ipadr + key + num_want + po
             udp_sck.sendto(msg, (urp[0], int(port[0])))
             reply, addr = udp_sck.recvfrom(1024)
-            #print(reply, addr)
             nantar = reply[:20]
             atta = reply[20:]
-            #print(f"{len(atta)} : {atta}")
-            #peerlist = []
             binary_ip = atta
             offset = 0
             n = len(binary_ip)
@@ -78,7 +71,6 @@ def scrape_udp(tracker, info_hash, my_peer_id, info, num_peers, my_port, total_l
                 offset += 2
             if len(list1)  > num_peers :
                 list1 = list1[:num_peers]
-            #print(list1)
             return list1
 
     except Exception as e:
