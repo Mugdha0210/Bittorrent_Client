@@ -10,7 +10,6 @@ from udp import scrape_udp
 
 class Client() :
     def __init__(self, filename, location, num_peers) :
-        #self.my_peer_id = '-MU0707-0a1kf7aDTbLO'
         self.torrent_name = filename
         self.download_dest = location
         self.isMultifile = False
@@ -68,15 +67,12 @@ class Client() :
         else :
             torrentFile = open(filename, "rb")
             metainfo = bencode.bdecode(torrentFile.read())
-            #print(metainfo)
             try :
                 self.tracker_url = ""
                 self.tracker_url_list = ""
                 if 'announce' in metainfo :
-                    # print("announce")
                     self.tracker_url = metainfo['announce']
                 if 'announce-list' in metainfo :
-                    # print("announce list")
                     self.tracker_url_list = metainfo['announce-list']
                 else :
                     self.tracker_url_list = []
@@ -128,19 +124,8 @@ class Client() :
         else :
             files = self.info['files']
             dir_name = self.info['name']
-            # files_1 = []
-            # for f in files :
-            #     files_1.append(dict(f))
-            # files = files_1
-            # print(files)
-            # print(dir_name)
             self.create_dir(dir_name, files)
             self.decodeMultifileInfo(files)
-            # #loop through files......every time one get request??
-            # length = files[1]['length']
-            # print(length)
-            # #self.length = length
-            # path = files[1]['path']
         query_params = urlencode({"info_hash" : self.info_hash, "peer_id" : self.my_peer_id, "port" : self.port, \
                                 "uploaded" : 0, "downloaded" : 0, "left" : self.length, \
                                 "event" : "started",\
@@ -150,7 +135,6 @@ class Client() :
         r = requests.get(lookup_url)
         content = r.content
         x = dict(bencode.bdecode(content))
-        # print(x)
         if content == b'<title>Invalid Request</title>\n' :
             return {"Error " : "Invalid Request"}
         return x
@@ -162,18 +146,14 @@ class Client() :
                 shutil.rmtree(dir_path)
             os.makedirs(dir_path)
             for file in files :
-                # print("in create_dir", file['path'])
                 file_path = os.path.join(dir_path)
                 for location in file['path'] :
-                    # file_name = str(file['path'])
-                    # print(dir_path, str(file_name))
                     file_path = os.path.join(file_path, location)
                 print(file_path)
                 if not os.path.exists(file_path) :
                     os.makedirs(os.path.join(self.download_dest, file_path))
         except Exception as e:
             print(f"Could not create directory for writeback as {e}")
-            # raise
             exit(0)
         return
 
@@ -216,7 +196,6 @@ class Client() :
                     list1 = list1[ : self.num]
             except Exception as e:
                 raise Exception(f"Exception in getting peers as {e}")
-        # print(list1)
         return list1
 
 
@@ -226,11 +205,9 @@ class Client() :
 
         handshake_msg = (chr(19) + "BitTorrent protocol" + chr(0) * 8).encode('utf-8')
         handshake_msg = b"".join([handshake_msg, self.info_hash, my_peer_id.encode('utf-8')])
-        #print("sending", handshake_msg)
         return handshake_msg
 
     def checkReplyHandshake(self, reply_handshake, this_peer, peer_tag) :
-        #exp_protocol = b'\x13BitTorrent protocol'
         exp_infohash = self.info_hash
         #CHECK FOR PEER ID TYPE!
         try :
@@ -253,7 +230,6 @@ class Client() :
 
     def _splitPieces(self) :
         pieces = self.pieces
-        #print(len(pieces))
         my_piece_list = []
         i = 0
         j = 0
@@ -265,22 +241,14 @@ class Client() :
                 my_piece_list.append((pieces[i : i + 20], j, 20))
             i += 20
             j += 1
-        #print(my_piece_list)
         self.num_of_pieces = j
         return my_piece_list
 
     def write_to_location(self, piece):
         if self.isMultifile :
-            # print("w_1")
             self.fd = os.open(os.path.expanduser(os.path.join(self.download_dest, 'temp')), os.O_RDWR|os.O_CREAT)
-            # print("w_2")
-        #else :
-        #    self.fd = os.open(os.path.expanduser(os.path.join(self.download_dest, self.info['name'])), os.O_RDWR|os.O_CREAT)
-        # print("w_3")
         offset_from_start = piece.index * self.piece_length
-        # print("w_4")
         os.lseek(self.fd, offset_from_start, os.SEEK_SET)
-        # print("w_5")
         try :
             os.write(self.fd, piece.data)
         except Exception as e:
@@ -288,13 +256,9 @@ class Client() :
             raise Exception
 
     def writeMultifile(self) :
-        # print(1)
         with open(os.path.join(self.download_dest, 'temp')) as f_buffer :
-            # print(2)
             for file in self.download_files :
-                # print(3)
                 with open(os.path.join(self.download_dest, file['name']), "w") as f_dest :
-                    # print(5)
                     for byte in range(file['length']) :
                         print("before f_dest write")
                         f_dest.write(f_buffer.read(1))
@@ -306,17 +270,8 @@ class Client() :
         return
 
     def connect_peer(self, this_peer, outboundSocket) :
-        #for printing only
         peer_tag = this_peer.peer_ip + " : " + str(this_peer.peer_portno) + " ---"
-        # try :
-        #     outboundSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     outboundSocket.connect((str(this_peer.peer_ip), int(this_peer.peer_portno)))
-        #     print(peer_tag, "Connected")
-        # #outboundSocket.setblocking(False)
-        # except :
-        #     print(peer_tag, "Did not connect")
 
-            #######################################################
         try :
             handshake_msg = self.generateHandshake(self.my_peer_id)
             outboundSocket.send(handshake_msg)
@@ -331,7 +286,6 @@ class Client() :
                 outboundSocket.close()
                 return
             else :
-                #print("received", reply_handshake)
                 if not self.checkReplyHandshake(reply_handshake, this_peer, peer_tag) :
                     print(peer_tag, "Reply handshake invalid, dropping peer")
                     outboundSocket.close()
@@ -342,7 +296,6 @@ class Client() :
                     first_msg.findLength(first_msg_prefix)
                     first_msg.id = recv_buffer[72]
                     first_msg.payload = recv_buffer[73:(73 + first_msg.len - 1)]
-                    # print(len(first_msg.payload))
                     first_msg.identify()
                     if first_msg.type == "null":
                         pass
@@ -359,7 +312,6 @@ class Client() :
                         #initialize have_pieces list
                         spares = (first_msg.len - 1) * 8 - self.num_of_pieces
                         this_peer.piece_list = bitwise_payload[: self.num_of_pieces]
-                        #m = len(this_peer.piece_list)
                         self.global_piece_list[this_peer] = this_peer.piece_list
                     elif first_msg.type == "have" :
                         piece_index = first_msg.handleHave()
@@ -514,13 +466,6 @@ class Client() :
                         payload_length = 1
                         outboundSocket.send(struct.pack(">IB", payload_length, interested_msg_id))
                         this_peer.state_info['am_interested'] = 1
-                    # IF THIS PEER DOES NOT HAVE SOMETHING I DON'T HAVE PLUS RAREST FIRST
-                    # if this_peer.state_info['am_interested'] == 1 :
-                    #     #send not interested
-                    #     notinterested_msg_id = 3
-                    #     payload_length = 1
-                    #     outboundSocket.send(struct.pack(">IB", payload_length, notinterested_msg_id))
-                    #     this_peer.state_info['am_interested'] = 0
                     #receive upto id of unknown messages.
                     recv_buffer = outboundSocket.recv(5)
                     some_msg = Message()
